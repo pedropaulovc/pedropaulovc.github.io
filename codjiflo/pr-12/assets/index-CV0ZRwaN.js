@@ -34737,4 +34737,4 @@ if (!rootElement) {
 clientExports.createRoot(rootElement).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
 );
-//# sourceMappingURL=index-jnsv1v7k.js.map
+//# sourceMappingURL=index-CV0ZRwaN.js.map
