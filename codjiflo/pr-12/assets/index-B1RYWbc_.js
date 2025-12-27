@@ -3989,7 +3989,7 @@ function requireReactDomClient_production() {
     }
     return null;
   }
-  var renderLanes = 0, currentlyRenderingFiber = null, currentHook = null, workInProgressHook = null, didScheduleRenderPhaseUpdate = false, didScheduleRenderPhaseUpdateDuringThisPass = false, shouldDoubleInvokeUserFnsInHooksDEV = false, localIdCounter = 0, thenableIndexCounter = 0, thenableState = null, globalClientIdCounter = 0;
+  var renderLanes = 0, currentlyRenderingFiber = null, currentHook = null, workInProgressHook = null, didScheduleRenderPhaseUpdate = false, didScheduleRenderPhaseUpdateDuringThisPass = false, shouldDoubleInvokeUserFnsInHooksDEV = false, localIdCounter2 = 0, thenableIndexCounter = 0, thenableState = null, globalClientIdCounter = 0;
   function throwInvalidHookError() {
     throw Error(formatProdErrorMessage(321));
   }
@@ -4059,8 +4059,8 @@ function requireReactDomClient_production() {
     return maybeThenable;
   }
   function checkDidRenderIdHook() {
-    var didRenderIdHook = 0 !== localIdCounter;
-    localIdCounter = 0;
+    var didRenderIdHook = 0 !== localIdCounter2;
+    localIdCounter2 = 0;
     return didRenderIdHook;
   }
   function bailoutHooks(current, workInProgress2, lanes) {
@@ -4080,7 +4080,7 @@ function requireReactDomClient_production() {
     renderLanes = 0;
     workInProgressHook = currentHook = currentlyRenderingFiber = null;
     didScheduleRenderPhaseUpdateDuringThisPass = false;
-    thenableIndexCounter = localIdCounter = 0;
+    thenableIndexCounter = localIdCounter2 = 0;
     thenableState = null;
   }
   function mountWorkInProgressHook() {
@@ -5064,7 +5064,7 @@ function requireReactDomClient_production() {
         var idWithLeadingBit = treeContextId;
         JSCompiler_inline_result = (idWithLeadingBit & ~(1 << 32 - clz32(idWithLeadingBit) - 1)).toString(32) + JSCompiler_inline_result;
         identifierPrefix = "_" + identifierPrefix + "R_" + JSCompiler_inline_result;
-        JSCompiler_inline_result = localIdCounter++;
+        JSCompiler_inline_result = localIdCounter2++;
         0 < JSCompiler_inline_result && (identifierPrefix += "H" + JSCompiler_inline_result.toString(32));
         identifierPrefix += "_";
       } else
@@ -34075,6 +34075,7 @@ const DEFAULT_CURRENT_USER = {
   login: "you",
   avatarUrl: "https://avatars.githubusercontent.com/u/583231?v=4"
 };
+let localIdCounter = 0;
 const createLocalId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -34082,7 +34083,8 @@ const createLocalId = () => {
   const timePart = Date.now().toString(16);
   const perfPart = typeof performance !== "undefined" && typeof performance.now === "function" ? Math.floor(performance.now() * 1e3).toString(16) : "";
   const randomPart = `${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
-  return `${timePart}-${perfPart}-${randomPart}`;
+  const counterPart = (localIdCounter++).toString(16);
+  return `${timePart}-${perfPart}-${randomPart}-${counterPart}`;
 };
 const mapGitHubComment = (comment) => ({
   id: String(comment.id),
@@ -34301,7 +34303,7 @@ function DiffView() {
       return aTime - bTime;
     });
   }, [threads, filename]);
-  const threadsByKey = reactExports.useMemo(() => {
+  const threadsByLineAndSide = reactExports.useMemo(() => {
     const map = /* @__PURE__ */ new Map();
     threadsForFile.forEach((thread) => {
       const key = `${String(thread.line)}-${thread.side}`;
@@ -34348,7 +34350,7 @@ function DiffView() {
               diffLines,
               language,
               filename,
-              threadsByKey,
+              threadsByLineAndSide,
               currentUserLogin: currentUser.login,
               addComment,
               addReply,
@@ -34367,7 +34369,7 @@ function DiffTable({
   diffLines,
   language,
   filename,
-  threadsByKey,
+  threadsByLineAndSide,
   currentUserLogin,
   addComment,
   addReply,
@@ -34379,9 +34381,10 @@ function DiffTable({
   const [draftBody, setDraftBody] = reactExports.useState("");
   const [isSubmittingDraft, setIsSubmittingDraft] = reactExports.useState(false);
   const [submitError, setSubmitError] = reactExports.useState(null);
+  const isSubmittingRef = reactExports.useRef(false);
   const handleSubmitComment = reactExports.useCallback(
     async (index2, body) => {
-      if (isSubmittingDraft) return;
+      if (isSubmittingRef.current) return;
       const targetLine = diffLines[index2];
       const side = targetLine?.type === "deletion" ? "LEFT" : "RIGHT";
       const lineNumber = side === "LEFT" ? targetLine?.oldLineNumber : targetLine?.newLineNumber;
@@ -34389,6 +34392,7 @@ function DiffTable({
       if (!targetLine || !lineNumber || !filename) {
         return;
       }
+      isSubmittingRef.current = true;
       setIsSubmittingDraft(true);
       setSubmitError(null);
       try {
@@ -34405,17 +34409,18 @@ function DiffTable({
         const message = err instanceof Error ? err.message : "Failed to post comment";
         setSubmitError(message);
       } finally {
+        isSubmittingRef.current = false;
         setIsSubmittingDraft(false);
       }
     },
-    [addComment, diffLines, filename, isSubmittingDraft]
+    [addComment, diffLines, filename]
   );
   return /* @__PURE__ */ jsxRuntimeExports.jsx("table", { className: "w-full border-collapse text-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx("tbody", { children: diffLines.map((line, index2) => {
     const leftKey = line.oldLineNumber != null ? `${String(line.oldLineNumber)}-LEFT` : null;
     const rightKey = line.newLineNumber != null ? `${String(line.newLineNumber)}-RIGHT` : null;
     const lineThreads = [
-      ...leftKey ? threadsByKey.get(leftKey) ?? [] : [],
-      ...rightKey ? threadsByKey.get(rightKey) ?? [] : []
+      ...leftKey ? threadsByLineAndSide.get(leftKey) ?? [] : [],
+      ...rightKey ? threadsByLineAndSide.get(rightKey) ?? [] : []
     ];
     const showCommentButton = line.type !== "header";
     const lineKey = line.oldLineNumber != null || line.newLineNumber != null ? `${String(line.oldLineNumber ?? "n")}-${String(line.newLineNumber ?? "n")}-${line.type}` : `${String(index2)}-${line.type}`;
@@ -34737,4 +34742,4 @@ if (!rootElement) {
 clientExports.createRoot(rootElement).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
 );
-//# sourceMappingURL=index-CV0ZRwaN.js.map
+//# sourceMappingURL=index-B1RYWbc_.js.map
